@@ -33,7 +33,6 @@ awful.spawn.with_shell("setxkbmap -layout us,cz -variant ,ucw -option grp:caps_s
 awful.spawn.with_shell("~/.config/awesome/autolock.sh")
 awful.spawn.with_shell("autorandr -c")
 
-
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -237,9 +236,10 @@ gears.timer {
 -- {{{ Wibar
 -- Create a textclock widget
 mytextclock = wibox.widget {
-	format = '%a %b %d,',
+	format = '%a %b %d %k:%M:%S',
 	widget = wibox.widget.textclock,
-	font = 'Source Code Pro 10'
+	font = 'Source Code Pro 10',
+	refresh = 1
 }
 
 -- Create a wibox for each screen and add it
@@ -373,7 +373,7 @@ awful.screen.connect_for_each_screen(function(s)
 			ram_widget{},
 			mytextclock,
 			--colorClockWidget,
-			hexClockWidget,
+			--hexClockWidget,
 			s.mylayoutbox,
 		},
 		-- }}}
