@@ -4,3 +4,6 @@
 [submodule "battery-widget"]
 	path = battery-widget
 	url = https://github.com/deficient/battery-widget.git
+[submodule "volumeicon"]
+	path = volumeicon
+	url = https://github.com/Maato/volumeicon.git
