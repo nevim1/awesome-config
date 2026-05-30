@@ -27,10 +27,6 @@ local batteryarc_widget = require("awesome-wm-widgets.batteryarc-widget.batterya
 local brightness_widget = require("awesome-wm-widgets.brightness-widget.brightness")
 -- }}}
 
-awful.spawn.with_shell("xinput set-prop 'DLL07A8:01 044E:120B' 'libinput Natural Scrolling Enabled' 1")
-awful.spawn.with_shell("xinput set-prop 'DLL07A8:01 044E:120B' 'libinput Disable While Typing Enabled' 0")
-awful.spawn.with_shell("setxkbmap -layout us,cz -variant ,ucw -option grp:caps_switch,compose:rctrl")
-awful.spawn.with_shell("~/.config/awesome/autolock.sh")
 awful.spawn.with_shell("autorandr -c")
 
 -- {{{ Error handling
@@ -108,6 +104,7 @@ local myawesomemenu = {
 	{ "manual", terminal .. " -e man awesome" },
 	{ "edit config", editor_cmd .. " " .. awesome.conffile },
 }
+
 local power = {
 	{ "suspend", terminal .. " systemctl start systemd-suspend" },
 	{ "hibernate", terminal .. " systemctl hibernate" },
@@ -416,7 +413,7 @@ globalkeys = gears.table.join(
 	awful.key(
 		{modkey}, "Escape",
 		function()
-			awful.spawn.with_shell("i3lock-fancy -p")
+			awful.spawn.with_shell("xscreensaver-command --lock")
 		end,
 		{description = "lock", group = "awesome"}
 	),
