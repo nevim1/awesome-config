@@ -17,6 +17,8 @@ local hotkeys_popup = require("awful.hotkeys_popup")
 -- Enable hotkeys help widget for VIM and other apps
 -- when client with a matching name is opened:
 require("awful.hotkeys_popup.keys")
+
+local gmath = require("gears.math")
 -- }}}
 
 -- {{{ widgets
@@ -241,6 +243,36 @@ gears.timer {
 
 -- }}}
 
+-- {{{ Helper functions
+local function move_client_to_prev_tag(switch)
+	local c = client.focus
+	if not c then return end
+
+	local t = c.screen.selected_tag
+	local tags = c.screen.tags
+	local idx = t.index
+	local newtag = tags[gmath.cycle(#tags, idx - 1)]
+	c:move_to_tag(newtag)
+	if switch then
+		awful.tag.viewprev()
+	end
+end
+
+local function move_client_to_next_tag(switch)
+	local c = client.focus
+	if not c then return end
+
+	local t = c.screen.selected_tag
+	local tags = c.screen.tags
+	local idx = t.index
+	local newtag = tags[gmath.cycle(#tags, idx + 1)]
+	c:move_to_tag(newtag)
+	if switch then
+		awful.tag.viewnext()
+	end
+end
+-- }}}
+
 -- {{{ Wibar
 -- Create a textclock widget
 mytextclock = wibox.widget {
@@ -406,6 +438,7 @@ globalkeys = gears.table.join(
 		{description="show help", group="awesome"}
 	),
 
+-- {{{ One over movement
 	awful.key(
 		{modkey}, "q", awful.tag.viewprev,
 		{description = "view previous", group = "tag"}
@@ -415,6 +448,27 @@ globalkeys = gears.table.join(
 		{modkey}, "e", awful.tag.viewnext,
 		{description = "view next", group = "tag"}
 	),
+
+	awful.key(
+		{modkey, "Shift"}, "q", function() move_client_to_prev_tag(true) end,
+		{description = "move focused client to previous tag", group = "tag"}
+	),
+
+	awful.key(
+		{modkey, "Shift"}, "e", function() move_client_to_next_tag(true) end,
+		{description = "move focused client to next tag", group = "tag"}
+	),
+
+	awful.key(
+		{modkey, "Control"}, "q", function() move_client_to_prev_tag(false) end,
+		{description = "move with focused client to previous tag", group = "tag"}
+	),
+
+	awful.key(
+		{modkey, "Control"}, "e", function() move_client_to_next_tag(false) end,
+		{description = "move with focused client to next tag", group = "tag"}
+	),
+-- }}}
 
 	awful.key(
 		{modkey}, "a", awful.tag.history.restore,
