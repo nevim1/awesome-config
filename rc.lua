@@ -95,6 +95,9 @@ beautiful.border_focus = '#545458'
 beautiful.tasklist_bg_focus = '#545458'
 beautiful.taglist_bg_focus = '#545458'
 ]]
+
+local allow_notif = true
+
 -- }}}
 
 -- {{{ Menu
@@ -416,6 +419,15 @@ globalkeys = gears.table.join(
 			awful.spawn.with_shell("xscreensaver-command --lock")
 		end,
 		{description = "lock", group = "awesome"}
+	),
+
+	awful.key(
+		{modkey}, "`",
+		function()
+			allow_notif = not allow_notif
+			naughty.notify({title = "notifications are " .. (allow_notif and "on " or "off"), allow = true, timeout = 0.375})
+		end,
+		{description = "change if notifications are shown", group = "awesome"}
 	),
 
 	awful.key(
@@ -970,4 +982,18 @@ end)
 
 client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+-- }}}
+
+-- {{{ Custom callbacks
+naughty.config.notify_callback = function(args)
+	if args.allow then
+		return args
+	end
+
+	if allow_notif then
+		return args
+	else
+		return nil
+	end
+end
 -- }}}
