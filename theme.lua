@@ -9,4 +9,5 @@ theme.wallpaper = function(s)
 		end
 	end
 end
+theme.font = "Source Code Pro 10"
 return theme

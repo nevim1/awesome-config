@@ -106,6 +106,9 @@ local myawesomemenu = {
 	{ "hotkeys", function() hotkeys_popup.show_help(nil, awful.screen.focused()) end },
 	{ "manual", terminal .. " -e man awesome" },
 	{ "edit config", editor_cmd .. " " .. awesome.conffile },
+	theme = {
+		width = 125
+	},
 }
 
 local power = {
@@ -113,13 +116,18 @@ local power = {
 	{ "hibernate", terminal .. " systemctl hibernate" },
 	{ "restart", awesome.restart },
 	{ "quit", function() awesome.quit() end },
-	{ "switch users", terminal .. " gdmflexiserver dm-tool" },
+	theme = {
+		width = 125
+	},
 }
 
 local powerSettings = {
 	{ "performance" , function() awful.spawn(" powerprofilesctl set performance") end },
 	{ "balanced" , function() awful.spawn(" powerprofilesctl set balanced") end },
 	{ "power saver" , function() awful.spawn(" powerprofilesctl set power-saver") end },
+	theme = {
+		width = 125
+	},
 }
 
 local mymainmenu = awful.menu(
@@ -138,7 +146,7 @@ local mymainmenu = awful.menu(
 		{ "open terminal", terminal },
 	},
 	theme = {
-		width = 150
+		width = 225
 	}
 })
 
@@ -416,6 +424,7 @@ globalkeys = gears.table.join(
 	awful.key(
 		{modkey}, "Escape",
 		function()
+			naughty.notify({title = "now locking", timeout=0.5})
 			awful.spawn.with_shell("xscreensaver-command --lock")
 		end,
 		{description = "lock", group = "awesome"}
