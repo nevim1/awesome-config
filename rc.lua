@@ -17,6 +17,8 @@ local hotkeys_popup = require("awful.hotkeys_popup")
 -- Enable hotkeys help widget for VIM and other apps
 -- when client with a matching name is opened:
 require("awful.hotkeys_popup.keys")
+
+local gmath = require("gears.math")
 -- }}}
 
 -- {{{ widgets
@@ -95,6 +97,9 @@ beautiful.border_focus = '#545458'
 beautiful.tasklist_bg_focus = '#545458'
 beautiful.taglist_bg_focus = '#545458'
 ]]
+
+local allow_notif = true
+
 -- }}}
 
 -- {{{ Menu
@@ -103,6 +108,9 @@ local myawesomemenu = {
 	{ "hotkeys", function() hotkeys_popup.show_help(nil, awful.screen.focused()) end },
 	{ "manual", terminal .. " -e man awesome" },
 	{ "edit config", editor_cmd .. " " .. awesome.conffile },
+	theme = {
+		width = 125
+	},
 }
 
 local power = {
@@ -110,13 +118,18 @@ local power = {
 	{ "hibernate", terminal .. " systemctl hibernate" },
 	{ "restart", awesome.restart },
 	{ "quit", function() awesome.quit() end },
-	{ "switch users", terminal .. " gdmflexiserver dm-tool" },
+	theme = {
+		width = 125
+	},
 }
 
 local powerSettings = {
 	{ "performance" , function() awful.spawn(" powerprofilesctl set performance") end },
 	{ "balanced" , function() awful.spawn(" powerprofilesctl set balanced") end },
 	{ "power saver" , function() awful.spawn(" powerprofilesctl set power-saver") end },
+	theme = {
+		width = 125
+	},
 }
 
 local mymainmenu = awful.menu(
@@ -135,7 +148,7 @@ local mymainmenu = awful.menu(
 		{ "open terminal", terminal },
 	},
 	theme = {
-		width = 150
+		width = 225
 	}
 })
 
@@ -230,6 +243,36 @@ gears.timer {
 
 -- }}}
 
+-- {{{ Helper functions
+local function move_client_to_prev_tag(switch)
+	local c = client.focus
+	if not c then return end
+
+	local t = c.screen.selected_tag
+	local tags = c.screen.tags
+	local idx = t.index
+	local newtag = tags[gmath.cycle(#tags, idx - 1)]
+	c:move_to_tag(newtag)
+	if switch then
+		awful.tag.viewprev()
+	end
+end
+
+local function move_client_to_next_tag(switch)
+	local c = client.focus
+	if not c then return end
+
+	local t = c.screen.selected_tag
+	local tags = c.screen.tags
+	local idx = t.index
+	local newtag = tags[gmath.cycle(#tags, idx + 1)]
+	c:move_to_tag(newtag)
+	if switch then
+		awful.tag.viewnext()
+	end
+end
+-- }}}
+
 -- {{{ Wibar
 -- Create a textclock widget
 mytextclock = wibox.widget {
@@ -291,7 +334,7 @@ local function set_wallpaper(s)
 		if type(wallpaper) == "function" then
 			wallpaper = wallpaper(s)
 		end
-		gears.wallpaper.maximized(wallpaper, s, true)
+		gears.wallpaper.maximized(wallpaper, s, false)
 	end
 end
 
@@ -395,6 +438,7 @@ globalkeys = gears.table.join(
 		{description="show help", group="awesome"}
 	),
 
+-- {{{ One over movement
 	awful.key(
 		{modkey}, "q", awful.tag.viewprev,
 		{description = "view previous", group = "tag"}
@@ -406,6 +450,27 @@ globalkeys = gears.table.join(
 	),
 
 	awful.key(
+		{modkey, "Shift"}, "q", function() move_client_to_prev_tag(true) end,
+		{description = "move focused client to previous tag", group = "tag"}
+	),
+
+	awful.key(
+		{modkey, "Shift"}, "e", function() move_client_to_next_tag(true) end,
+		{description = "move focused client to next tag", group = "tag"}
+	),
+
+	awful.key(
+		{modkey, "Control"}, "q", function() move_client_to_prev_tag(false) end,
+		{description = "move with focused client to previous tag", group = "tag"}
+	),
+
+	awful.key(
+		{modkey, "Control"}, "e", function() move_client_to_next_tag(false) end,
+		{description = "move with focused client to next tag", group = "tag"}
+	),
+-- }}}
+
+	awful.key(
 		{modkey}, "a", awful.tag.history.restore,
 		{description = "go back", group = "tag"}
 	),
@@ -413,9 +478,19 @@ globalkeys = gears.table.join(
 	awful.key(
 		{modkey}, "Escape",
 		function()
+			naughty.notify({title = "now locking", timeout=0.5})
 			awful.spawn.with_shell("xscreensaver-command --lock")
 		end,
 		{description = "lock", group = "awesome"}
+	),
+
+	awful.key(
+		{modkey}, "`",
+		function()
+			allow_notif = not allow_notif
+			naughty.notify({title = "notifications are " .. (allow_notif and "on " or "off"), allow = true, timeout = 0.375})
+		end,
+		{description = "change if notifications are shown", group = "awesome"}
 	),
 
 	awful.key(
@@ -979,4 +1054,18 @@ client.connect_signal("focus", function(c)
 end)
 
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+-- }}}
+
+-- {{{ Custom callbacks
+naughty.config.notify_callback = function(args)
+	if args.allow then
+		return args
+	end
+
+	if allow_notif then
+		return args
+	else
+		return nil
+	end
+end
 -- }}}
