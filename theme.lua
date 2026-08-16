@@ -1,4 +1,5 @@
-local theme = dofile("/usr/share/awesome/themes/default/theme.lua")
+local gears = require("gears")
+local theme = dofile(gears.filesystem.get_themes_dir() .. "default/theme.lua")
 theme.wallpaper_cmd = { }
 theme.wallpaper = function(s)
 	if s then
