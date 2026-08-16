@@ -73,6 +73,7 @@ editor_cmd = terminal .. " -e " .. editor
 modkey = "Mod4"
 
 -- Table of layouts to cover with awful.layout.inc, order matters.
+-- TODO: change layout order/layouts to have them adequate for vertical/horizontal monitor
 awful.layout.layouts = {
 	awful.layout.suit.tile,
 	awful.layout.suit.floating,
@@ -114,7 +115,7 @@ local myawesomemenu = {
 }
 
 local power = {
-	{ "suspend", terminal .. " systemctl start systemd-suspend" },
+	{ "suspend", terminal .. " systemctl suspend" },
 	{ "hibernate", terminal .. " systemctl hibernate" },
 	{ "restart", awesome.restart },
 	{ "quit", function() awesome.quit() end },
