@@ -109,16 +109,18 @@ local myawesomemenu = {
 	{ "hotkeys", function() hotkeys_popup.show_help(nil, awful.screen.focused()) end },
 	{ "manual", terminal .. " -e man awesome" },
 	{ "edit config", editor_cmd .. " " .. awesome.conffile },
+	{ "restart", awesome.restart },
+	{ "quit", function() awesome.quit() end },
 	theme = {
 		width = 125
 	},
 }
 
 local power = {
-	{ "suspend", terminal .. " systemctl suspend" },
-	{ "hibernate", terminal .. " systemctl hibernate" },
-	{ "restart", awesome.restart },
-	{ "quit", function() awesome.quit() end },
+	{ "suspend", "systemctl suspend" },
+	{ "hibernate", "systemctl hibernate" },
+	{ "reboot", "reboot" },
+	{ "shutdown", "shutdown now" },
 	theme = {
 		width = 125
 	},
