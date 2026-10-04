@@ -164,20 +164,34 @@ local mylauncher = awful.widget.launcher({
 menubar.utils.terminal = terminal -- Set the terminal for applications that require it
 -- }}}
 
--- {{{ Custom widgets
-local binClockWidget = wibox.widget {
-	{
-		id = "binClck",
-		text = "",
-		widget = wibox.widget.textbox,
-		font = 'Source Code Pro 10'
-	},
-	layout      = wibox.layout.stack,
-	set_time = function(self, val)
-		local date = os.date('*t')
-		self.binClck.text = toBits(2, date.hour) .. ':' .. toBits(2, date.min) .. ':' .. toBits(2, date.sec)
-	end,
-}
+-- {{{ Helper functions
+local function move_client_to_prev_tag(switch)
+	local c = client.focus
+	if not c then return end
+
+	local t = c.screen.selected_tag
+	local tags = c.screen.tags
+	local idx = t.index
+	local newtag = tags[gmath.cycle(#tags, idx - 1)]
+	c:move_to_tag(newtag)
+	if switch then
+		awful.tag.viewprev()
+	end
+end
+
+local function move_client_to_next_tag(switch)
+	local c = client.focus
+	if not c then return end
+
+	local t = c.screen.selected_tag
+	local tags = c.screen.tags
+	local idx = t.index
+	local newtag = tags[gmath.cycle(#tags, idx + 1)]
+	c:move_to_tag(newtag)
+	if switch then
+		awful.tag.viewnext()
+	end
+end
 
 local function toBits(bits, num)
 	local number = num
@@ -193,22 +207,6 @@ local function toBits(bits, num)
 	return out
 end
 
-local hexClockWidget = wibox.widget {
-	{
-		id = "hexClck",
-		text = "",
-		widget = wibox.widget.textbox,
-		font = 'Source Code Pro 10',
-		fg = "red",
-		bg = "red",
-	},
-	layout      = wibox.layout.stack,
-	set_time = function(self, val)
-		local date = os.date('*t')
-		self.hexClck.text =  date.hour .. ':' .. toHex(2, date.min) .. ':' .. toHex(2, date.sec)
-	end,
-}
-
 hexLookup = { '0', '1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' }
 
 function toHex(digits, num)
@@ -221,28 +219,6 @@ function toHex(digits, num)
 	end
 	return out
 end
-
-local colorClockWidget = wibox.widget{
-	{
-		id = "clrClck",
-		bg = string.format("#%02x%02x%02x", 0 , 0, 0),
-		widget = wibox.container.background,
-		forced_width = 100,
-	},
-	set_time = function(self, val)
-		local date = os.date('*t')
-		self.clrClck.bg = string.format("#%02x%02x%02x", date.hour, date.min, date.sec)
-	end
-}
-
-gears.timer {
-	timeout = 1,
-	call_now = true,
-	autostart = true,
-	callback = function()
-		hexClockWidget.time = true
-	end
-}
 
 local function interpolate_color(hex1, hex2, ratio)
 	ratio = math.max(0, math.min(1, ratio))
@@ -278,6 +254,60 @@ local function shorten_bytes(number_in)
 	local size_postfixes = {'', 'K', 'M', 'G', 'T'}
 	return string.format('%.2f%s', number, size_postfixes[size])
 end
+-- }}}
+
+-- {{{ Custom widgets
+local binClockWidget = wibox.widget {
+	{
+		id = "binClck",
+		text = "",
+		widget = wibox.widget.textbox,
+		font = 'Source Code Pro 10'
+	},
+	layout      = wibox.layout.stack,
+	set_time = function(self, val)
+		local date = os.date('*t')
+		self.binClck.text = toBits(2, date.hour) .. ':' .. toBits(2, date.min) .. ':' .. toBits(2, date.sec)
+	end,
+}
+
+local hexClockWidget = wibox.widget {
+	{
+		id = "hexClck",
+		text = "",
+		widget = wibox.widget.textbox,
+		font = 'Source Code Pro 10',
+		fg = "red",
+		bg = "red",
+	},
+	layout      = wibox.layout.stack,
+	set_time = function(self, val)
+		local date = os.date('*t')
+		self.hexClck.text =  date.hour .. ':' .. toHex(2, date.min) .. ':' .. toHex(2, date.sec)
+	end,
+}
+
+local colorClockWidget = wibox.widget{
+	{
+		id = "clrClck",
+		bg = string.format("#%02x%02x%02x", 0 , 0, 0),
+		widget = wibox.container.background,
+		forced_width = 100,
+	},
+	set_time = function(self, val)
+		local date = os.date('*t')
+		self.clrClck.bg = string.format("#%02x%02x%02x", date.hour, date.min, date.sec)
+	end
+}
+
+gears.timer {
+	timeout = 1,
+	call_now = true,
+	autostart = true,
+	callback = function()
+		hexClockWidget.time = true
+	end
+}
 
 local batteryPrefix = '/sys/class/power_supply/BAT0/'
 
@@ -332,36 +362,6 @@ local mytextclock = wibox.widget {
 	font = 'Source Code Pro 10',
 	refresh = 1
 }
--- }}}
-
--- {{{ Helper functions
-local function move_client_to_prev_tag(switch)
-	local c = client.focus
-	if not c then return end
-
-	local t = c.screen.selected_tag
-	local tags = c.screen.tags
-	local idx = t.index
-	local newtag = tags[gmath.cycle(#tags, idx - 1)]
-	c:move_to_tag(newtag)
-	if switch then
-		awful.tag.viewprev()
-	end
-end
-
-local function move_client_to_next_tag(switch)
-	local c = client.focus
-	if not c then return end
-
-	local t = c.screen.selected_tag
-	local tags = c.screen.tags
-	local idx = t.index
-	local newtag = tags[gmath.cycle(#tags, idx + 1)]
-	c:move_to_tag(newtag)
-	if switch then
-		awful.tag.viewnext()
-	end
-end
 -- }}}
 
 -- {{{ Wibar
