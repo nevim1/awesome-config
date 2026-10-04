@@ -244,6 +244,94 @@ gears.timer {
 	end
 }
 
+local function interpolate_color(hex1, hex2, ratio)
+	ratio = math.max(0, math.min(1, ratio))
+
+	local r1, g1, b1 = tonumber(hex1:sub(2, 3), 16), tonumber(hex1:sub(4, 5), 16), tonumber(hex1:sub(6, 7), 16)
+	local r2, g2, b2 = tonumber(hex2:sub(2, 3), 16), tonumber(hex2:sub(4, 5), 16), tonumber(hex2:sub(6, 7), 16)
+
+	local r = math.floor(r1 + (r2 - r1) * ratio)
+	local g = math.floor(g1 + (g2 - g1) * ratio)
+	local b = math.floor(b1 + (b2 - b1) * ratio)
+
+	return string.format("#%02X%02X%02X", r, g, b)
+end
+
+local function interpolate_3_color(hex1, hex2, hex3, ratio)
+	ratio = math.max(0, math.min(1, ratio))
+	local color
+	if(ratio < 0.5) then
+		color = interpolate_color(hex1, hex2, ratio * 2)
+	else
+		color = interpolate_color(hex2, hex3, (ratio - 0.5) * 2)
+	end
+	return color
+end
+
+local function shorten_bytes(number_in)
+	local number = tonumber(number_in)
+	local size = 1
+	while number > 1024 do
+		number = number / 1024
+		size = size + 1
+	end
+	local size_postfixes = {'', 'K', 'M', 'G', 'T'}
+	return string.format('%.2f%s', number, size_postfixes[size])
+end
+
+local batteryPrefix = '/sys/class/power_supply/BAT0/'
+
+local bat = awful.widget.watch('cat ' .. batteryPrefix .. 'charge_now' .. ' ' .. batteryPrefix .. 'charge_full', 1,
+	function(widget, stdin)
+		local charge_now = 0
+		local charge_full = 0
+		charge_now, charge_full = string.match(stdin, "(%d+)%s(%d+)")
+		local charge = charge_now/charge_full or 0
+		local color = "#ffffff"
+		color = interpolate_3_color("#ff0000", "#ffff00", "#00ff00", charge)
+		widget:set_markup(string.format('Bat:<span foreground="%s">%.3f</span>%%', color, charge*100))
+	end
+)
+
+local show_mem = false
+local mem = awful.widget.watch('free -b', 1,
+	function(widget, stdin)
+		if show_mem then
+			naughty.notify({text= stdin, timeout=1.01})
+		end
+		local out = ""
+		for name, total, used in stdin:gmatch("(%w+:)%s+(%d+)%s+(%d+)") do
+			local color = interpolate_3_color("#00ff00", "#ffff00", "#ff0000", used/total)
+			out = out .. name .. '<span foreground="' .. color .. '">' .. shorten_bytes(used) .. '/' .. shorten_bytes(total) .. '</span> '
+		end
+		widget:set_markup(out:sub(1,-2))
+	end
+)
+
+local cpuWidget = awful.widget.watch(
+	"bash -c 'sensors | grep -E \"fan|Package\" | sed -E -e \"s/^.*:\\s+(.+)\\s+\\(.*$/\\1/\" | sed -z -e \"s/\\n//\" | sed -E -e \"s/\\s//g\" -e \"s/\\+/ /\"'", 1)
+
+local net = awful.widget.watch('nmcli -c no -g SSID,SIGNAL,ACTIVE device wifi', 1,
+	function(widget, stdin)
+		--naughty.notify({text=stdin})
+		for line in stdin:gmatch("[^\r\n]+") do
+			local first, second, third = line:match('(.*):(.+):(.+)$')
+			if third == 'yes' then
+				local color = interpolate_3_color("#ff0000", "#ffff00", "#00ff00", tonumber(second)/100)
+				local markup = string.format('wlan0:<span foreground="%s">%s</span>', color, first)
+				widget:set_markup(markup)
+			end
+		end
+	end
+)
+
+-- Create a textclock widget
+local mytextclock = wibox.widget {
+	format = '%a %b %d %k:%M:%S',
+	widget = wibox.widget.textclock,
+	font = 'Source Code Pro 10',
+	refresh = 1
+}
 -- }}}
 
 -- {{{ Helper functions
@@ -277,14 +365,6 @@ end
 -- }}}
 
 -- {{{ Wibar
--- Create a textclock widget
-mytextclock = wibox.widget {
-	format = '%a %b %d %k:%M:%S',
-	widget = wibox.widget.textclock,
-	font = 'Source Code Pro 10',
-	refresh = 1
-}
-
 -- Create a wibox for each screen and add it
 local taglist_buttons = gears.table.join(
 	awful.button({ }, 1, function(t) t:view_only() end),
@@ -398,22 +478,24 @@ awful.screen.connect_for_each_screen(function(s)
 		-- {{{ Right widgets
 		{
 			layout = wibox.layout.fixed.horizontal,
-			spacing = 7.5,
+			spacing = 5,
 			wibox.widget.systray{},
-			volume_widget(),
+			--volume_widget(),
+			brightness_widget{
+				program = 'brightnessctl',
+				step = 5,
+				rmb_set_max = true
+			},
+			net,
+			bat,
+			mem,
+			cpuWidget,
 			cpu_widget{
 				color = '#fff',
 				step_width = 1,
 				step_spacing = 0,
 				timeout = 0.25
 			},
-			brightness_widget{
-				program = 'brightnessctl',
-				step = 5,
-				rmb_set_max = true
-			},
-			batteryarc_widget{show_current_level=true, main_color='#fff'},
-			ram_widget{},
 			mytextclock,
 			--colorClockWidget,
 			--hexClockWidget,
